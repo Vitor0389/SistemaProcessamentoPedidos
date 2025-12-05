@@ -1,7 +1,11 @@
 version: "3.8"
 
 services:
-  # Zookeeper - Necessário para Kafka (modo tradicional - mais estável)
+  # ============================================
+  # INFRAESTRUTURA
+  # ============================================
+
+  # Zookeeper - Necessário para Kafka
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -10,6 +14,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
     networks:
       - arquitetura-network
     healthcheck:
@@ -82,7 +89,7 @@ services:
       timeout: 5s
       retries: 3
 
-  # Kafka UI (Opcional - para visualização dos tópicos)
+  # Kafka UI - Interface para visualização e gerenciamento
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -99,10 +106,143 @@ services:
     networks:
       - arquitetura-network
 
+  # ============================================
+  # MICROSERVIÇOS
+  # ============================================
+
+  # Serviço de Pedidos (Producer)
+  servico-pedidos:
+    build:
+      context: ./servico-pedidos
+      dockerfile: Dockerfile
+    container_name: servico-pedidos
+    depends_on:
+      kafka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Boot
+      SPRING_APPLICATION_NAME: servico-pedidos
+      SERVER_PORT: 8080
+
+      # Kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+
+      # Zipkin
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+
+      # Logging
+      LOGGING_LEVEL_COM_ARQUITETURA: DEBUG
+      LOGGING_LEVEL_ROOT: INFO
+
+    networks:
+      - arquitetura-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Serviço de Estoque (Consumer)
+  servico-estoque:
+    build:
+      context: ./servico-estoque
+      dockerfile: Dockerfile
+    container_name: servico-estoque
+    depends_on:
+      kafka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      # Spring Boot
+      SPRING_APPLICATION_NAME: servico-estoque
+      SERVER_PORT: 8081
+
+      # Kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      SPRING_KAFKA_CONSUMER_GROUP_ID: estoque-group
+
+      # Zipkin
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+
+      # Logging
+      LOGGING_LEVEL_COM_ARQUITETURA: DEBUG
+      LOGGING_LEVEL_ROOT: INFO
+
+    networks:
+      - arquitetura-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Serviço de Notificação (Consumer)
+  servico-notificacao:
+    build:
+      context: ./servico-notificacao
+      dockerfile: Dockerfile
+    container_name: servico-notificacao
+    depends_on:
+      kafka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      # Spring Boot
+      SPRING_APPLICATION_NAME: servico-notificacao
+      SERVER_PORT: 8082
+
+      # Kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      SPRING_KAFKA_CONSUMER_GROUP_ID: notificacao-group
+
+      # Zipkin
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+
+      # Logging
+      LOGGING_LEVEL_COM_ARQUITETURA: DEBUG
+      LOGGING_LEVEL_ROOT: INFO
+
+    networks:
+      - arquitetura-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+# ============================================
+# VOLUMES
+# ============================================
 volumes:
   kafka-data:
     driver: local
+  zookeeper-data:
+    driver: local
+  zookeeper-logs:
+    driver: local
 
+# ============================================
+# NETWORKS
+# ============================================
 networks:
   arquitetura-network:
     driver: bridge
