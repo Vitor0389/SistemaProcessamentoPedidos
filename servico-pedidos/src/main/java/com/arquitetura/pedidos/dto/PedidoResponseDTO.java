@@ -11,11 +11,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO para resposta de criação de pedido
- *
- * Retornado ao cliente após a criação bem-sucedida do pedido.
- */
 @Data
 @Builder
 @NoArgsConstructor

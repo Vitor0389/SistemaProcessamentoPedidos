@@ -7,17 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Email Consumer - Padrão Sidecar
- *
- * Este consumer é parte do SIDECAR de Email.
- * Responsabilidade: Consumir eventos de pedidos e enviar emails APENAS.
- *
- * Demonstra o padrão Sidecar:
- * - Foco em UMA responsabilidade (emails)
- * - Processo independente do serviço principal
- * - Pode ser escalado independentemente
- */
 @Component
 public class EmailConsumer {
 
@@ -31,13 +20,6 @@ public class EmailConsumer {
     this.emailService = emailService;
   }
 
-  /**
-   * Consome eventos de pedidos do Kafka
-   *
-   * IMPORTANTE: Note que usamos um consumer group DIFERENTE
-   * (email-sidecar-group) para garantir que este sidecar
-   * processe todos os eventos independentemente dos outros consumers.
-   */
   @KafkaListener(
     topics = "${app.kafka.topic.pedidos}",
     groupId = "email-sidecar-group",
@@ -63,7 +45,6 @@ public class EmailConsumer {
     log.info(eventLog.toString());
 
     try {
-      // Envia email (responsabilidade exclusiva deste sidecar)
       emailService.enviarEmailConfirmacao(pedido);
 
       log.info("✅ [EMAIL-SIDECAR] Email processado com sucesso!\n");
@@ -73,7 +54,6 @@ public class EmailConsumer {
         e.getMessage(),
         e
       );
-      // Em produção, aqui iria para uma Dead Letter Queue
     }
   }
 }

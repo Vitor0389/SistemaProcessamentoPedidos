@@ -7,20 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-/**
- * Email Service - Padrão Sidecar VERDADEIRO
- *
- * Este serviço é parte do SIDECAR de Email.
- * Responsabilidade: Enviar emails APENAS.
- *
- * DEMONSTRAÇÃO DO PADRÃO SIDECAR VERDADEIRO:
- * - É chamado via HTTP/localhost pelo serviço principal
- * - Compartilha namespace de rede com o serviço de notificação
- * - Foca exclusivamente em envio de emails
- * - Não conhece SMS, Push ou outras notificações
- * - Pode ser atualizado/escalado independentemente
- * - Lifecycle acoplado ao serviço principal
- */
 @Service
 public class EmailService {
 
@@ -31,17 +17,6 @@ public class EmailService {
 
   public EmailService() {}
 
-  /**
-   * Envia email direto via requisição HTTP (SIDECAR PATTERN)
-   *
-   * Este método é chamado pelo controller quando o serviço de notificação
-   * faz uma requisição HTTP para o sidecar.
-   *
-   * @param destinatario Email do destinatário
-   * @param assunto Assunto do email
-   * @param corpo Corpo do email
-   * @param isHtml Se o corpo é HTML ou texto plano
-   */
   public void enviarEmailDireto(
     String destinatario,
     String assunto,
@@ -56,14 +31,12 @@ public class EmailService {
     log.info("   └─ Tipo: {}", isHtml ? "HTML" : "Texto Plano");
     log.info("═══════════════════════════════════════════════════════════");
 
-    // Simula tempo de processamento do email
     try {
       Thread.sleep(500);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
 
-    // Log do conteúdo
     log.info("📄 [SIDECAR EMAIL] Conteúdo do Email:");
     log.info("─────────────────────────────────────────────────────────");
     log.info("{}", corpo);
@@ -75,15 +48,6 @@ public class EmailService {
     log.info("═══════════════════════════════════════════════════════════");
   }
 
-  /**
-   * Envia email de confirmação de pedido
-   *
-   * Em produção, aqui você integraria com:
-   * - SendGrid
-   * - Amazon SES
-   * - Mailgun
-   * - SMTP tradicional
-   */
   public void enviarEmailConfirmacao(Pedido pedido) {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
       "dd/MM/yyyy HH:mm:ss"
@@ -158,15 +122,11 @@ public class EmailService {
 
     log.info(emailLog.toString());
 
-    // Simula tempo de processamento do email
     simularEnvioEmail();
 
     log.info("✅ [EMAIL-SIDECAR] EMAIL ENVIADO COM SUCESSO!\n");
   }
 
-  /**
-   * Simula o envio de email com delay
-   */
   private void simularEnvioEmail() {
     try {
       log.info("📤 [EMAIL-SIDECAR] Processando template HTML...");
@@ -181,10 +141,6 @@ public class EmailService {
     }
   }
 
-  /**
-   * Gera HTML do email (método auxiliar)
-   * Em produção, usaria templates (Thymeleaf, Freemarker, etc)
-   */
   private String gerarHtmlEmail(Pedido pedido) {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
       "dd/MM/yyyy HH:mm:ss"

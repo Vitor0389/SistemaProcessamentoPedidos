@@ -10,11 +10,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Modelo de Item do Pedido
- *
- * Representa um produto individual dentro de um pedido.
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -35,9 +30,6 @@ public class ItemPedido {
   @DecimalMin(value = "0.01", message = "O preço deve ser maior que zero")
   private BigDecimal preco;
 
-  /**
-   * Calcula o subtotal do item (quantidade * preço)
-   */
   public BigDecimal getSubtotal() {
     if (quantidade != null && preco != null) {
       return preco.multiply(BigDecimal.valueOf(quantidade));

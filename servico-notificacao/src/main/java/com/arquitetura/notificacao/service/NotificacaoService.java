@@ -11,17 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Serviço de Notificações - SIDECAR PATTERN VERDADEIRO
- *
- * Responsável por processar e enviar notificações aos clientes.
- * Simula o envio de SMS e Push Notifications.
- *
- * ⚠️ PADRÃO SIDECAR VERDADEIRO:
- * O envio de EMAILS é delegado ao Email Sidecar via HTTP/localhost.
- * O sidecar roda no mesmo namespace de rede e é chamado diretamente
- * via localhost, demonstrando o verdadeiro padrão Sidecar.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,17 +22,6 @@ public class NotificacaoService {
   @Value("${sidecar.email.url:http://localhost:8084}")
   private String sidecarEmailUrl;
 
-  /**
-   * Processa um pedido e envia notificações ao cliente
-   *
-   * ⚠️ PADRÃO SIDECAR VERDADEIRO:
-   * - SMS e Push Notifications são enviados diretamente
-   * - Email é delegado ao Sidecar via HTTP/localhost
-   * - O sidecar roda no mesmo namespace de rede (localhost)
-   * - Comunicação síncrona via REST
-   *
-   * @param pedido Pedido a ser notificado
-   */
   public void processarNotificacao(Pedido pedido) {
     var span = tracer.currentSpan();
     var traceId = span != null ? span.context().traceId() : "no-trace";
@@ -55,29 +33,17 @@ public class NotificacaoService {
     log.info("   └─ Trace ID: {}", traceId);
     log.info("═══════════════════════════════════════════════════════════");
 
-    // Simular processamento
     simularProcessamento();
 
-    // Enviar notificações diretas (SMS e Push)
     enviarSMS(pedido);
     enviarPushNotification(pedido);
 
-    // Delegar envio de email ao SIDECAR via HTTP/localhost
     enviarEmailViaSidecar(pedido);
 
     log.info("✅ [NOTIFICACAO] Todas as notificações enviadas com sucesso!");
     log.info("═══════════════════════════════════════════════════════════");
   }
 
-  /**
-   * Delega o envio de email ao Sidecar via HTTP/localhost
-   *
-   * DEMONSTRAÇÃO DO PADRÃO S HTTP ao localhost (sidecar compartilha rede)
-   * - Comunicação síncrona e de baixa latência
-   * - Sidecar provê funcionalidade auxiliar (envio de email)
-   *
-   * @param pedido Pedido para enviar email
-   */
   private void enviarEmailViaSidecar(Pedido pedido) {
     log.info("═══════════════════════════════════════════════════════════");
     log.info("📧 [NOTIFICACAO] Delegando envio de email ao SIDECAR");
@@ -87,7 +53,6 @@ public class NotificacaoService {
     log.info("═══════════════════════════════════════════════════════════");
 
     try {
-      // Criar requisição de email
       EmailRequest emailRequest = EmailRequest.builder()
         .destinatario(pedido.getClienteId() + "@email.com")
         .assunto("Pedido Confirmado: " + pedido.getId())
@@ -96,7 +61,6 @@ public class NotificacaoService {
         .contexto("Notificação de Pedido")
         .build();
 
-      // Chamar o sidecar via HTTP (localhost)
       String url = sidecarEmailUrl + "/api/sidecar/email/pedido";
       EmailResponse response = restTemplate.postForObject(
         url,
@@ -119,18 +83,11 @@ public class NotificacaoService {
       log.error("❌ [NOTIFICACAO] Erro ao chamar SIDECAR de email", e);
       log.error("   └─ URL: {}", sidecarEmailUrl);
       log.error("   └─ Erro: {}", e.getMessage());
-      // Em produção, você poderia:
-      // - Tentar novamente (retry)
-      // - Usar um fallback
-      // - Publicar em uma fila de dead-letter
     }
 
     log.info("═══════════════════════════════════════════════════════════");
   }
 
-  /**
-   * Gera o corpo do email em HTML
-   */
   private String gerarCorpoEmail(Pedido pedido) {
     StringBuilder html = new StringBuilder();
     html.append("<html><body>");
@@ -172,10 +129,6 @@ public class NotificacaoService {
     return html.toString();
   }
 
-  /**
-   * Simula o envio de SMS
-   * Esta funcionalidade permanece no serviço principal
-   */
   private void enviarSMS(Pedido pedido) {
     log.info("📱 [SMS] Enviando SMS de confirmação");
     log.info(
@@ -189,10 +142,6 @@ public class NotificacaoService {
     );
   }
 
-  /**
-   * Simula o envio de push notification
-   * Esta funcionalidade permanece no serviço principal
-   */
   private void enviarPushNotification(Pedido pedido) {
     log.info("🔔 [PUSH] Enviando push notification");
     log.info("   └─ Device ID: device-{}", pedido.getClienteId());
@@ -203,12 +152,9 @@ public class NotificacaoService {
     );
   }
 
-  /**
-   * Simula tempo de processamento
-   */
   private void simularProcessamento() {
     try {
-      Thread.sleep(500); // Simula 500ms de processamento
+      Thread.sleep(500);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       log.warn("⚠️ [NOTIFICACAO] Processamento interrompido");

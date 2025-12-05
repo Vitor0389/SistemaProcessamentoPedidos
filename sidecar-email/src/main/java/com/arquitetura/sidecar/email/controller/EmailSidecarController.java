@@ -12,20 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Controller REST para o Email Sidecar (SIDECAR PATTERN VERDADEIRO)
- *
- * Este é um SIDECAR VERDADEIRO que:
- * - É chamado via HTTP/localhost pelo serviço principal
- * - Compartilha o namespace de rede com o serviço de notificação
- * - Tem lifecycle acoplado ao serviço principal
- * - Provê funcionalidade auxiliar (envio de emails)
- *
- * Expõe endpoints HTTP para:
- * - Envio direto de emails (chamado pelo serviço principal)
- * - Health check
- * - Informações do serviço
- */
 @RestController
 @RequestMapping("/api/sidecar/email")
 @RequiredArgsConstructor
@@ -37,15 +23,6 @@ public class EmailSidecarController {
 
   private final EmailService emailService;
 
-  /**
-   * Endpoint principal do SIDECAR: Envio de email via HTTP
-   *
-   * Este é o endpoint que o serviço de notificação chama via localhost
-   * para delegar o envio de emails ao sidecar.
-   *
-   * POSTth   * @param reques Dados do email a ser enviado
-   * @return Resposta com status do envio
-   */
   @PostMapping("/enviar")
   public ResponseEntity<EmailResponse> enviarEmail(
     @Valid @RequestBody EmailRequest request
@@ -58,7 +35,6 @@ public class EmailSidecarController {
     log.info("═══════════════════════════════════════════════════════════");
 
     try {
-      // Delega para o serviço de email
       emailService.enviarEmailDireto(
         request.getDestinatario(),
         request.getAssunto(),
@@ -91,14 +67,6 @@ public class EmailSidecarController {
     }
   }
 
-  /**
-   * Endpoint para enviar email de confirmação de pedido
-   *
-   * POST /api/sidecar/email/pedido
-   *
-   * @param pedido Dados do pedido
-   * @return Resposta com status do envio
-   */
   @PostMapping("/pedido")
   public ResponseEntity<EmailResponse> enviarEmailPedido(
     @Valid @RequestBody Pedido pedido
@@ -138,13 +106,6 @@ public class EmailSidecarController {
     }
   }
 
-  /**
-   * Endpoint de health check
-   *
-   * GET /api/sidecar/email/health
-   *
-   * @return Status do sidecar
-   */
   @GetMapping("/health")
   public ResponseEntity<String> health() {
     log.debug("💚 [SIDECAR] Health check requisitado");
@@ -153,13 +114,6 @@ public class EmailSidecarController {
     );
   }
 
-  /**
-   * Endpoint de informações do sidecar
-   *
-   * GET /api/sidecar/email/info
-   *
-   * @return Informações sobre o sidecar
-   */
   @GetMapping("/info")
   public ResponseEntity<SidecarInfo> info() {
     log.debug("ℹ️ [SIDECAR] Informações do sidecar requisitadas");
@@ -178,13 +132,6 @@ public class EmailSidecarController {
     return ResponseEntity.ok(info);
   }
 
-  /**
-   * Endpoint de status do sidecar
-   *
-   * GET /api/sidecar/email/status
-   *
-   * @return Status detalhado
-   */
   @GetMapping("/status")
   public ResponseEntity<SidecarStatus> status() {
     log.debug("📊 [SIDECAR] Status do sidecar requisitado");
@@ -200,9 +147,6 @@ public class EmailSidecarController {
     return ResponseEntity.ok(status);
   }
 
-  /**
-   * Record para informações do sidecar
-   */
   private record SidecarInfo(
     String nome,
     String versao,
@@ -214,9 +158,6 @@ public class EmailSidecarController {
     String funcionalidade
   ) {}
 
-  /**
-   * Record para status do sidecar
-   */
   private record SidecarStatus(
     String status,
     String mensagem,

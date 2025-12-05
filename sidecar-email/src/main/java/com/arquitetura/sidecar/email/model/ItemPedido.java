@@ -2,79 +2,81 @@ package com.arquitetura.sidecar.email.model;
 
 import java.math.BigDecimal;
 
-/**
- * Modelo de Item do Pedido
- *
- * Representa um produto individual dentro de um pedido.
- */
 public class ItemPedido {
 
-    private String codigo;
-    private String nome;
-    private Integer quantidade;
-    private BigDecimal preco;
+  private String codigo;
+  private String nome;
+  private Integer quantidade;
+  private BigDecimal preco;
 
-    public ItemPedido() {
+  public ItemPedido() {}
+
+  public ItemPedido(
+    String codigo,
+    String nome,
+    Integer quantidade,
+    BigDecimal preco
+  ) {
+    this.codigo = codigo;
+    this.nome = nome;
+    this.quantidade = quantidade;
+    this.preco = preco;
+  }
+
+  public BigDecimal getSubtotal() {
+    if (quantidade != null && preco != null) {
+      return preco.multiply(BigDecimal.valueOf(quantidade));
     }
+    return BigDecimal.ZERO;
+  }
 
-    public ItemPedido(String codigo, String nome, Integer quantidade, BigDecimal preco) {
-        this.codigo = codigo;
-        this.nome = nome;
-        this.quantidade = quantidade;
-        this.preco = preco;
-    }
+  public String getCodigo() {
+    return codigo;
+  }
 
-    /**
-     * Calcula o subtotal do item (quantidade * preço)
-     */
-    public BigDecimal getSubtotal() {
-        if (quantidade != null && preco != null) {
-            return preco.multiply(BigDecimal.valueOf(quantidade));
-        }
-        return BigDecimal.ZERO;
-    }
+  public void setCodigo(String codigo) {
+    this.codigo = codigo;
+  }
 
-    // Getters e Setters
+  public String getNome() {
+    return nome;
+  }
 
-    public String getCodigo() {
-        return codigo;
-    }
+  public void setNome(String nome) {
+    this.nome = nome;
+  }
 
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
-    }
+  public Integer getQuantidade() {
+    return quantidade;
+  }
 
-    public String getNome() {
-        return nome;
-    }
+  public void setQuantidade(Integer quantidade) {
+    this.quantidade = quantidade;
+  }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+  public BigDecimal getPreco() {
+    return preco;
+  }
 
-    public Integer getQuantidade() {
-        return quantidade;
-    }
+  public void setPreco(BigDecimal preco) {
+    this.preco = preco;
+  }
 
-    public void setQuantidade(Integer quantidade) {
-        this.quantidade = quantidade;
-    }
-
-    public BigDecimal getPreco() {
-        return preco;
-    }
-
-    public void setPreco(BigDecimal preco) {
-        this.preco = preco;
-    }
-
-    @Override
-    public String toString() {
-        return "ItemPedido{" +
-                "codigo='" + codigo + '\'' +
-                ", nome='" + nome + '\'' +
-                ", quantidade=" + quantidade +
-                ", preco=" + preco +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return (
+      "ItemPedido{" +
+      "codigo='" +
+      codigo +
+      '\'' +
+      ", nome='" +
+      nome +
+      '\'' +
+      ", quantidade=" +
+      quantidade +
+      ", preco=" +
+      preco +
+      '}'
+    );
+  }
 }

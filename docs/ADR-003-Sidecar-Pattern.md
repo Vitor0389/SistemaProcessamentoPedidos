@@ -1,59 +1,79 @@
-# ADR-003 — Adoção do Sidecar Pattern com OpenTelemetry Agent
+# ADR-003 — Adoção do Sidecar Pattern para Email Service
+
 **Status:** Aceito – 2024
 
 ## Contexto
-A instrumentação atual (Micrometer + Brave no código) gera:
-- acoplamento forte
-- manutenção difícil
-- dependências duplicadas
-- falta de padronização entre serviços
-- necessidade de tocar código para qualquer ajuste
+
+O serviço de notificação possui múltiplas responsabilidades:
+
+- Envio de SMS
+- Envio de Push Notifications
+- Envio de Emails
+- Consumo de eventos do Kafka
+- Comunicação com serviços externos
 
 ## Problema
-A observabilidade está misturada com lógica de negócio, dificultando upgrades, testes, governança e crescimento da arquitetura.
+
+O envio de emails é uma funcionalidade auxiliar que:
+
+- Pode ser necessária em múltiplos serviços
+- Possui lógica de retry, formatação de templates, e integração com provedores externos
+- Deveria ser independente e escalável
+- Não deveria aumentar a complexidade do serviço principal
 
 ## Decisão
-Adotar **OpenTelemetry Java Agent** no formato **Sidecar Pattern** para instrumentação automática (zero-code).
 
-## Por quê?
-- zero dependências no código
-- atualização sem rebuild
-- padronização entre serviços
-- funciona igual para qualquer linguagem (com agents equivalentes)
-- configuração externa por environment variables
+Adotar **Sidecar Pattern** para isolar a funcionalidade de envio de emails em um processo independente que roda ao lado do serviço de notificação.
 
-## Como funciona
-Aplicação roda limpa e o agent injeta instrumentação automaticamente:
-java -javaagent:opentelemetry-javaagent.jar -jar app.jar
+### Arquitetura
 
+App Principal (Orquestração) → Requisição Local → Sidecar (Isolamento de Infra de Email)
 
-O agent:
-- intercepta Spring, Kafka, JDBC, Async, etc.
-- cria spans automaticamente
-- envia para Zipkin/Jaeger/OTLP
+## Alternativas Consideradas
 
-## Arquitetura
-App (só negócio)
-│
-└── OpenTelemetry Agent (sidecar)
-│
-└── Zipkin
+Manter Tudo no Serviço de Notificação →
 
+- Viola princípio de responsabilidade única
+- Dificulta escalabilidade granular
+- Acoplamento forte
+- Complexidade crescente
 
-## Alternativas
-- Manter Micrometer → ❌ acoplado / manutenção difícil  
-- Service Mesh → ❌ complexo demais  
-- OpenTelemetry SDK manual → ❌ ainda exige código  
-- **Java Agent** → ✅ escolhido
+Service Mesh (Istio/Linkerd) →
 
-## Consequências Positivas
-- código 100% limpo
-- instrumentação automática
-- upgrade rápido
-- padronização entre serviços
-- pronto para Kubernetes e futuro service mesh
+- Complexidade excessiva para o problema
+- Overhead de infraestrutura
+- Curva de aprendizado íngreme
+- Overkill para necessidade atual
 
-## Consequências Negativas
-- menos controle granular
-- overhead maior que manual
-- debugging do agent mais complexo
+## Consequências
+
+### Positivas
+
+- Serviço principal foca em SMS e Push
+- Sidecar foca exclusivamente em emails
+- Atualizar sidecar sem afetar serviço principal
+- Rollback individual
+- Versionamento independente
+- Escalar sidecar independentemente
+- Recursos dedicados para processamento de email
+- Outros serviços podem usar o mesmo sidecar
+- Padronização de envio de email
+- Equipes diferentes podem manter cada componente
+- Testes isolados
+- Menor impacto em mudanças
+- Logs separados
+- Métricas independentes
+- Rastreamento distribuído mantido
+
+### Negativas
+
+- Overhead de chamada HTTP
+- ~1-5ms adicional
+- Dois processos para gerenciar
+- Deploy coordenado em produção
+- Monitoramento de dois serviços
+- Necessidade de circuit breaker
+- Fallback em caso de falha do sidecar
+- Retry logic
+- Variáveis de ambiente adicionais
+- Configuração de rede em containers
