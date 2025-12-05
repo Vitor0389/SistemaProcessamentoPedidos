@@ -1,4 +1,4 @@
-Sistema de Processamento de Pedidos
+# Sistema de Processamento de Pedidos
 
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -66,7 +66,7 @@ Quando um cliente cria um pedido, o sistema precisa:
 
 ### Fluxo de Execução
 
-````
+```
 1. Cliente → POST /api/pedidos
             ↓
 2. PedidoService.criar()
@@ -81,6 +81,8 @@ Quando um cliente cria um pedido, o sistema precisa:
     ↓                ↓
 6. Processamento  Processamento
    independente   independente
+```
+
 ---
 
 ## Padrões Implementados
@@ -98,6 +100,9 @@ kafkaTemplate.send("pedidos", pedidoId, evento);
 public void processar(PedidoEvento evento) {
     // Processamento independente
 }
+```
+
+---
 
 ## 🔧 Tecnologias
 
@@ -199,7 +204,7 @@ Acesse: http://localhost:9411
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 sistema-pedidos/
@@ -230,7 +235,7 @@ sistema-pedidos/
 │   │       └── config/        # Configurações
 │   └── pom.xml
 │   └── Dockerfile
-├── sidecar-email/             # ⭐ SIDECAR - Email APENAS
+├── sidecar-email/             # SIDECAR - Email APENAS
 │   ├── src/main/java/
 │   │   └── com/arquitetura/sidecar/email/
 │   │       ├── consumer/      # Kafka Consumer
@@ -242,11 +247,11 @@ sistema-pedidos/
 ├── docker-compose.yml         # Orquestração completa
 ├── SIDECAR-PATTERN.md         # Documentação do padrão
 └── testar-sidecar.sh          # Script de teste do padrão
+```
 
 ---
 
-
-### Fluxo Completo com Sidecar
+## Fluxo Completo com Sidecar
 
 ```
 1. Cliente cria pedido → servico-pedidos
@@ -264,7 +269,6 @@ servico-estoque    servico-notificacao    sidecar-email          │
    ↓                     ↓                     ↓                  │
 Atualiza estoque   Envia SMS+Push       Envia Email             │
                                                                   │
-         Todos processam EM PARALELO! ⚡                         │
+         Todos processam EM PARALELO!                          │
          (não sequencial)                                        │
 ```
-````
