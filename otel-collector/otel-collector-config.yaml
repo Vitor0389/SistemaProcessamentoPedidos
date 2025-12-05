@@ -1,0 +1,62 @@
+# OpenTelemetry Collector Configuration - Sidecar Pattern
+# Este arquivo configura como o sidecar coleta, processa e exporta telemetria
+
+receivers:
+  # Recebe traces via OTLP (OpenTelemetry Protocol)
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Recebe traces via Zipkin (compatibilidade)
+  zipkin:
+    endpoint: 0.0.0.0:9411
+
+processors:
+  # Processa em lotes para melhor performance
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  # Adiciona atributos de recurso (metadados do serviço)
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: docker
+        action: insert
+
+  # Limita memória usada pelo collector
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
+exporters:
+  # Exporta para Zipkin (backend de tracing)
+  zipkin:
+    endpoint: http://zipkin:9411/api/v2/spans
+    format: proto
+
+  # Exporta logs para console (debug)
+  logging:
+    loglevel: info
+
+  # Exporta para OTLP (caso queira adicionar outro backend)
+  otlp:
+    endpoint: zipkin:9411
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    # Pipeline de traces
+    traces:
+      receivers: [otlp, zipkin]
+      processors: [memory_limiter, batch, resource]
+      exporters: [zipkin, logging]
+
+  # Configurações de telemetria do próprio collector
+  telemetry:
+    logs:
+      level: info

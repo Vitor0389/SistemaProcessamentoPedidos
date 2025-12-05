@@ -9,6 +9,7 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       acks: all
       retries: 3
+      compression-type: gzip
       properties:
         linger.ms: 10
         batch.size: 16384

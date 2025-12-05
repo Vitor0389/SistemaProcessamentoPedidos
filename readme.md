@@ -5,9 +5,7 @@ Sistema de Processamento de Pedidos
 [![Kafka](https://img.shields.io/badge/Apache%20Kafka-7.5-black.svg)](https://kafka.apache.org/)
 [![Zipkin](https://img.shields.io/badge/Zipkin-2.24-blue.svg)](https://zipkin.io/)
 
-> Sistema de processamento de pedidos escalável e resiliente utilizando Event-Driven Architecture, Distributed Tracing e Sidecar Pattern.
-
-## 🎯 Visão Geral
+## Visão Geral
 
 Este projeto demonstra a implementação de um sistema moderno de processamento de pedidos utilizando as melhores práticas de arquitetura de microserviços. O sistema processa pedidos de forma **assíncrona**, **escalável** e **observável**.
 
@@ -16,22 +14,12 @@ Este projeto demonstra a implementação de um sistema moderno de processamento 
 Quando um cliente cria um pedido, o sistema precisa:
 
 - ✅ Registrar o pedido
-- ✅ Enviar notificações (email, SMS, push)
+- ✅ Enviar notificações (SMS e push notification)
+- ✅ **Enviar email de confirmação (via Sidecar)**
 - ✅ Atualizar o estoque de produtos
 - ✅ Permitir adição de novos processamentos no futuro
 
-### Solução Implementada
-
-Arquitetura orientada a eventos que permite:
-
-- 🚀 **Resposta rápida** ao cliente (< 100ms)
-- 📈 **Escalabilidade** independente de cada serviço
-- 🔄 **Resiliência** contra falhas
-- 👀 **Observabilidade** completa do fluxo
-
----
-
-## 🏗️ Arquitetura
+## Arquitetura
 
 ### Diagrama de Alto Nível
 
@@ -56,24 +44,24 @@ Arquitetura orientada a eventos que permite:
     │ • 3 partições │
     └───────┬───────┘
             │
-    ┌───────┴────────┐
-    │                │
-    ▼                ▼
-┌──────────────┐  ┌──────────────┐
-│ Notificação  │  │   Estoque    │
-│ :8081        │  │   :8082      │
-│ • Email      │  │ • Atualiza   │
-│ • SMS        │  │ • Valida     │
-└──────┬───────┘  └──────┬───────┘
-       │                 │
-       └────────┬────────┘
-                │
-                ▼
-         ┌──────────┐
-         │  Zipkin  │
-         │  :9411   │
-         │ • Traces │
-         └──────────┘
+            │ Distribui para 3 Consumers
+    ┌───────┼────────────────┐
+    │       │                │
+    ▼       ▼                ▼
+┌────────┐ ┌──────────┐ ┌──────────────┐
+│Estoque │ │Notificaçã│ │ SIDECAR      │
+│:8081   │ │:8082     │ │ Email        │
+│• Atua- │ │• SMS     │ │ (Java)       │
+│  liza  │ │• Push    │ │• Email APENAS│
+└────────┘ └──────────┘ └──────────────┘
+                │               │
+                └───────┬───────┘
+                        ↓
+                 ┌──────────┐
+                 │  Zipkin  │
+                 │  :9411   │
+                 │ • Traces │
+                 └──────────┘
 ```
 
 ### Fluxo de Execução
@@ -95,7 +83,7 @@ Arquitetura orientada a eventos que permite:
    independente   independente
 ---
 
-## 🎨 Padrões Implementados
+## Padrões Implementados
 
 ### 1. Event-Driven Architecture (EDA)
 
@@ -110,59 +98,6 @@ kafkaTemplate.send("pedidos", pedidoId, evento);
 public void processar(PedidoEvento evento) {
     // Processamento independente
 }
-````
-
-**Benefícios:**
-
-- ✅ Desacoplamento total entre serviços
-- ✅ Escalabilidade horizontal (adicionar mais instâncias de consumidores para processar eventos em paralelo)
-- ✅ Resiliência (falhas isoladas)
-- ✅ Facilita evolução do sistema
-
-**Trade-offs:**
-
-- ⚠️ Consistência eventual
-- ⚠️ Complexidade de debugging
-
----
-
-**Benefícios:**
-
-- ✅ Visibilidade end-to-end
-- ✅ Debug 70% mais rápido
-- ✅ Identificação de gargalos
-- ✅ Correlação automática de logs
-
-**Trade-offs:**
-
-- ⚠️ Overhead de 5-10%
-- ⚠️ Infraestrutura adicional
-
----
-
-### 3. Sidecar Pattern
-
-**Instrumentação automática sem modificar código**
-
-```bash
-java -javaagent:opentelemetry-javaagent.jar \
-     -Dotel.service.name=servico-pedidos \
-     -jar servico-pedidos.jar
-```
-
-**Benefícios:**
-
-- ✅ Zero-code instrumentation
-- ✅ Código focado em negócio
-- ✅ Atualização independente
-- ✅ Configuração externa
-
-**Trade-offs:**
-
-- ⚠️ Overhead adicional (~10-20%)
-- ⚠️ Menos controle granular
-
----
 
 ## 🔧 Tecnologias
 
@@ -183,12 +118,11 @@ java -javaagent:opentelemetry-javaagent.jar \
 
 ### Observabilidade
 
-| Tecnologia         | Versão | Uso                |
-| ------------------ | ------ | ------------------ |
-| Micrometer Tracing | 1.2    | Abstração          |
-| Brave              | 6.0    | Implementação      |
-| Zipkin             | 2.24   | Backend            |
-| OpenTelemetry      | Latest | Sidecar (opcional) |
+| Tecnologia         | Versão | Uso           |
+| ------------------ | ------ | ------------- |
+| Micrometer Tracing | 1.2    | Abstração     |
+| Brave              | 6.0    | Implementação |
+| Zipkin             | 2.24   | Backend       |
 
 ### DevOps
 
@@ -199,7 +133,7 @@ java -javaagent:opentelemetry-javaagent.jar \
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Pré-requisitos
 
@@ -279,11 +213,11 @@ sistema-pedidos/
 │   │       └── config/        # Configurações
 │   └── pom.xml
 │   └── Dockerfile
-├── servico-notificacao/       # Consumer - Notificações
+├── servico-notificacao/       # Consumer - SMS e Push
 │   ├── src/main/java/
 │   │   └── com/arquitetura/notificacao/
 │   │       ├── consumer/      # Kafka Consumer
-│   │       ├── service/       # Processamento
+│   │       ├── service/       # SMS + Push (SEM email!)
 │   │       └── config/        # Configurações
 │   └── pom.xml
 │   └── Dockerfile
@@ -296,50 +230,41 @@ sistema-pedidos/
 │   │       └── config/        # Configurações
 │   └── pom.xml
 │   └── Dockerfile
-├── docker/                    # Infraestrutura
-│   └── docker-compose.yml     # Kafka, Zookeeper, Zipkin
-│
-
-# Arquitetura do Sistema - Detalhamento Técnico
-
-## 📖 Visão Geral
-
-Este documento detalha a arquitetura técnica do Sistema de Processamento de Pedidos, explicando cada componente, padrão arquitetural e decisão técnica.
-
----
-
-## 🎯 Princípios Arquiteturais
-
-### 1. Separation of Concerns (Separação de Responsabilidades)
-
-Cada serviço tem uma responsabilidade clara e bem definida:
-
-- **Serviço de Pedidos**: Gerenciar criação de pedidos
-- **Serviço de Notificação**: Enviar notificações aos clientes
-- **Serviço de Estoque**: Controlar inventário
-
-### 2. Loose Coupling (Baixo Acoplamento)
-
-Serviços se comunicam através de eventos, não conhecem uns aos outros diretamente.
-
-```
-
-❌ Acoplamento Forte:
-PedidoService → NotificacaoService.enviar()
-→ EstoqueService.atualizar()
-
-✅ Baixo Acoplamento:
-PedidoService → Kafka Event → [Notificação, Estoque]
-
-```
-
-### 3. High Cohesion (Alta Coesão)
-
-Código relacionado permanece junto. Ex: Tudo sobre notificações está no serviço de notificação.
-
-### 4. Scalability First (Escalabilidade Primeiro)
-
-Cada componente pode escalar independentemente.
+├── sidecar-email/             # ⭐ SIDECAR - Email APENAS
+│   ├── src/main/java/
+│   │   └── com/arquitetura/sidecar/email/
+│   │       ├── consumer/      # Kafka Consumer
+│   │       ├── service/       # Email Service
+│   │       ├── model/         # Domain models
+│   │       └── config/        # Configurações
+│   └── pom.xml
+│   └── Dockerfile
+├── docker-compose.yml         # Orquestração completa
+├── SIDECAR-PATTERN.md         # Documentação do padrão
+└── testar-sidecar.sh          # Script de teste do padrão
 
 ---
+
+
+### Fluxo Completo com Sidecar
+
 ```
+1. Cliente cria pedido → servico-pedidos
+                            ↓
+2. Publica no Kafka → pedidos-topic
+                            ↓
+3. Kafka distribui para 3 consumers EM PARALELO:
+
+   ┌─────────────────────┬─────────────────────┬──────────────────┐
+   │                     │                     │                  │
+   ↓                     ↓                     ↓                  │
+servico-estoque    servico-notificacao    sidecar-email          │
+(Consumer 1)        (Consumer 2)           (Consumer 3/SIDECAR)  │
+   │                     │                     │                  │
+   ↓                     ↓                     ↓                  │
+Atualiza estoque   Envia SMS+Push       Envia Email             │
+                                                                  │
+         Todos processam EM PARALELO! ⚡                         │
+         (não sequencial)                                        │
+```
+````

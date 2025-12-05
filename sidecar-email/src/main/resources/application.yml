@@ -1,23 +1,23 @@
 spring:
   application:
-    name: servico-notificacao
+    name: sidecar-email
 
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: notificacao-group
+      group-id: email-sidecar-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.type.mapping: pedido:com.arquitetura.notificacao.model.Pedido
+        spring.json.type.mapping: pedido:com.arquitetura.sidecar.email.model.Pedido
     properties:
       # Configurações de tracing para Kafka
       spring.json.use.type.headers: false
 
 server:
-  port: 8081
+  port: 8084
 
 management:
   endpoints:
@@ -38,7 +38,7 @@ management:
 logging:
   level:
     root: INFO
-    com.arquitetura.notificacao: DEBUG
+    com.arquitetura.sidecar.email: DEBUG
     org.springframework.kafka: INFO
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
@@ -52,8 +52,3 @@ app:
     email:
       remetente: noreply@sistema-pedidos.com
       assunto: "Seu pedido foi recebido!"
-
-# Configuração do Sidecar Email (SIDECAR PATTERN)
-sidecar:
-  email:
-    url: http://localhost:8084

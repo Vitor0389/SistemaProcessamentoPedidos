@@ -142,7 +142,15 @@ services:
     networks:
       - arquitetura-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/actuator/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -161,11 +169,11 @@ services:
       zipkin:
         condition: service_healthy
     ports:
-      - "8081:8081"
+      - "8082:8082"
     environment:
       # Spring Boot
       SPRING_APPLICATION_NAME: servico-estoque
-      SERVER_PORT: 8081
+      SERVER_PORT: 8082
 
       # Kafka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
@@ -182,14 +190,22 @@ services:
     networks:
       - arquitetura-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8082/actuator/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     restart: unless-stopped
 
-  # Serviço de Notificação (Consumer)
+  # Serviço de Notificação (Consumer) com Sidecar
   servico-notificacao:
     build:
       context: ./servico-notificacao
@@ -201,11 +217,12 @@ services:
       zipkin:
         condition: service_healthy
     ports:
-      - "8082:8082"
+      - "8081:8081"
+      - "8084:8084" # Porta do sidecar exposta via serviço principal
     environment:
       # Spring Boot
       SPRING_APPLICATION_NAME: servico-notificacao
-      SERVER_PORT: 8082
+      SERVER_PORT: 8081
 
       # Kafka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
@@ -215,6 +232,9 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
 
+      # Sidecar Email Configuration (SIDECAR PATTERN)
+      SIDECAR_EMAIL_URL: http://localhost:8084
+
       # Logging
       LOGGING_LEVEL_COM_ARQUITETURA: DEBUG
       LOGGING_LEVEL_ROOT: INFO
@@ -222,12 +242,91 @@ services:
     networks:
       - arquitetura-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8081/actuator/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     restart: unless-stopped
+
+  # ============================================
+  # SIDECAR - Email Service (SIDECAR PATTERN VERDADEIRO)
+  # ============================================
+  # Demonstração do Padrão Sidecar VERDADEIRO:
+  #
+  # Este container implementa o SIDECAR PATTERN autêntico:
+  # ✅ Compartilha namespace de rede com servico-notificacao (network_mode: service)
+  # ✅ É chamado via localhost pelo serviço principal
+  # ✅ Tem lifecycle acoplado ao serviço principal
+  # ✅ Provê funcionalidade auxiliar (envio de emails)
+  # ✅ Não é acessível externamente (apenas localhost)
+  #
+  # Características do Sidecar Verdadeiro:
+  # - Roda no mesmo namespace de rede do serviço principal
+  # - Comunicação via HTTP/localhost (baixa latência)
+  # - Foca em UMA responsabilidade técnica (emails)
+  # - Lifecycle acoplado ao serviço principal
+  # - Escala junto com o serviço principal
+
+  sidecar-email:
+    build:
+      context: ./sidecar-email
+      dockerfile: Dockerfile
+    container_name: sidecar-email
+    depends_on:
+      servico-notificacao:
+        condition: service_healthy
+    # SIDECAR PATTERN: Compartilha a rede com o serviço principal
+    network_mode: "service:servico-notificacao"
+    environment:
+      # Spring Boot
+      SPRING_APPLICATION_NAME: sidecar-email
+      SERVER_PORT: 8084 # Porta diferente do serviço principal (8081)
+
+      # Kafka Configuration (mantido para consumo de eventos legacy)
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      SPRING_KAFKA_CONSUMER_GROUP_ID: email-sidecar-group
+
+      # Zipkin
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+
+      # Email Configuration
+      APP_NOTIFICACAO_EMAIL_REMETENTE: noreply@sistema-pedidos.com
+
+      # Logging
+      LOGGING_LEVEL_COM_ARQUITETURA_SIDECAR_EMAIL: DEBUG
+      LOGGING_LEVEL_ROOT: INFO
+
+    # Não usa network própria - compartilha com servico-notificacao
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8084/api/sidecar/email/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    labels:
+      - "description=Sidecar Pattern - Serviço auxiliar Java para envio de emails"
+      - "pattern=sidecar"
+      - "responsibility=email-sending"
+      - "language=java"
 
 # ============================================
 # VOLUMES

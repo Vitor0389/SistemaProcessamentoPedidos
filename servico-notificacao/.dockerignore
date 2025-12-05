@@ -1,0 +1,49 @@
+# .dockerignore para servico-pedidos
+# ===================================
+
+# Copiar APENAS o JAR compilado, ignorar todo o resto
+
+# Maven build artifacts (exceto JAR final)
+target/*
+!target/servico-pedidos-1.0.0.jar
+
+# Código fonte (não necessário no runtime)
+src/
+
+# Maven files
+pom.xml
+mvnw
+mvnw.cmd
+.mvn/
+
+# IDEs
+.idea/
+.vscode/
+.eclipse/
+.settings/
+.classpath
+.project
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Git
+.git/
+.gitignore
+
+# Outros
+*.class
+*.war
+*.ear
+*.zip
+*.tar.gz
+README.md

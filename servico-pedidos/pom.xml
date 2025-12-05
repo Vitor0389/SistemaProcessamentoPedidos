@@ -51,6 +51,12 @@
             <artifactId>zipkin-reporter-brave</artifactId>
         </dependency>
 
+        <!-- Brave Instrumentation Kafka Clients -->
+        <dependency>
+            <groupId>io.zipkin.brave</groupId>
+            <artifactId>brave-instrumentation-kafka-clients</artifactId>
+        </dependency>
+
         <!-- Actuator para métricas -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
