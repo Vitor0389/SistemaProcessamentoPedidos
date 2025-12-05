@@ -151,14 +151,13 @@ docker --version  # Docker
 ### Passo 1: Clonar o Repositório
 
 ```bash
-git clone https://github.com/seu-usuario/sistema-pedidos.git
-cd sistema-pedidos
+git clone https://github.com/Vitor0389/SistemaProcessamentoPedidos.git
+cd SistemaProcessamentoPedidos
 ```
 
 ### Passo 2: Subir Infraestrutura
 
 ```bash
-cd docker
 docker-compose up -d
 
 # Aguardar Kafka iniciar (30-60s)
@@ -222,7 +221,7 @@ sistema-pedidos/
 │   ├── src/main/java/
 │   │   └── com/arquitetura/notificacao/
 │   │       ├── consumer/      # Kafka Consumer
-│   │       ├── service/       # SMS + Push (SEM email!)
+│   │       ├── service/       # SMS + Push
 │   │       └── config/        # Configurações
 │   └── pom.xml
 │   └── Dockerfile
@@ -245,30 +244,7 @@ sistema-pedidos/
 │   └── pom.xml
 │   └── Dockerfile
 ├── docker-compose.yml         # Orquestração completa
-├── SIDECAR-PATTERN.md         # Documentação do padrão
-└── testar-sidecar.sh          # Script de teste do padrão
+
 ```
 
 ---
-
-## Fluxo Completo com Sidecar
-
-```
-1. Cliente cria pedido → servico-pedidos
-                            ↓
-2. Publica no Kafka → pedidos-topic
-                            ↓
-3. Kafka distribui para 3 consumers EM PARALELO:
-
-   ┌─────────────────────┬─────────────────────┬──────────────────┐
-   │                     │                     │                  │
-   ↓                     ↓                     ↓                  │
-servico-estoque    servico-notificacao    sidecar-email          │
-(Consumer 1)        (Consumer 2)           (Consumer 3/SIDECAR)  │
-   │                     │                     │                  │
-   ↓                     ↓                     ↓                  │
-Atualiza estoque   Envia SMS+Push       Envia Email             │
-                                                                  │
-         Todos processam EM PARALELO!                          │
-         (não sequencial)                                        │
-```
