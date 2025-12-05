@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: servico-notificacao
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notificacao-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: pedido:com.arquitetura.notificacao.model.Pedido
+    properties:
+      # Configurações de tracing para Kafka
+      spring.json.use.type.headers: false
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+logging:
+  level:
+    root: INFO
+    com.arquitetura.notificacao: DEBUG
+    org.springframework.kafka: INFO
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+# Configurações customizadas
+app:
+  kafka:
+    topic:
+      pedidos: pedidos-topic
+  notificacao:
+    email:
+      remetente: noreply@sistema-pedidos.com
+      assunto: "Seu pedido foi recebido!"
