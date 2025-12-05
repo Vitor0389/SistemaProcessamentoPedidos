@@ -85,25 +85,6 @@ Quando um cliente cria um pedido, o sistema precisa:
 
 ---
 
-## Padrões Implementados
-
-### 1. Event-Driven Architecture (EDA)
-
-**Comunicação assíncrona via eventos**
-
-```java
-// Producer
-kafkaTemplate.send("pedidos", pedidoId, evento);
-
-// Consumer
-@KafkaListener(topics = "pedidos")
-public void processar(PedidoEvento evento) {
-    // Processamento independente
-}
-```
-
----
-
 ## 🔧 Tecnologias
 
 ### Core
